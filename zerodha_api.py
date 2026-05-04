@@ -5,6 +5,9 @@ kite = None
 ACCESS_TOKEN = None
 
 
+# -----------------------------
+# INIT KITE CLIENT
+# -----------------------------
 def init_kite():
     global kite
 
@@ -19,8 +22,22 @@ def init_kite():
     return kite
 
 
-def generate_token(request_token: str):
+# -----------------------------
+# STORE TOKEN (SAFE MEMORY)
+# -----------------------------
+def set_token(token):
     global ACCESS_TOKEN
+    ACCESS_TOKEN = token
+
+
+def get_token():
+    return ACCESS_TOKEN
+
+
+# -----------------------------
+# GENERATE TOKEN AFTER LOGIN
+# -----------------------------
+def generate_token(request_token: str):
 
     try:
         kite = init_kite()
@@ -38,8 +55,11 @@ def generate_token(request_token: str):
             api_secret=api_secret
         )
 
+        global ACCESS_TOKEN
         ACCESS_TOKEN = data["access_token"]
         kite.set_access_token(ACCESS_TOKEN)
+
+        set_token(ACCESS_TOKEN)
 
         return {
             "status": "SUCCESS",
@@ -53,7 +73,11 @@ def generate_token(request_token: str):
         }
 
 
+# -----------------------------
+# LIVE PRICE (SAFE)
+# -----------------------------
 def get_ltp(symbol: str):
+
     try:
         if not ACCESS_TOKEN:
             return None
