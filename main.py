@@ -1,12 +1,8 @@
-from fastapi import FastAPI
-from signals import generate_signals
-
-app = FastAPI()
-
-@app.get("/")
-def home():
-    return {"status": "API Working"}
-    
-@app.get("/signals")
-def signals():
-    return generate_signals()
+@app.get("/predict/{stock}")
+def predict(stock: str):
+    return {
+        "stock": stock,
+        "prediction": "Bullish short-term momentum",
+        "expected_move": "1-5%",
+        "confidence": random.randint(60, 85)
+    }
