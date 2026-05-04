@@ -1,47 +1,18 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
-import random
-from datetime import datetime
 
-from zerodha_api import generate_token, get_ltp
+from zerodha_api import get_ltp, is_market_open
 
 app = FastAPI()
 
-# -------------------------
-# FIX CORS (IMPORTANT FOR WORDPRESS)
-# -------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# -------------------------
-# HOME
-# -------------------------
-@app.get("/")
-def home():
-    return {
-        "status": "API Running",
-        "message": "Stock Signal System Active"
-    }
-
-# -------------------------
-# ENV CHECK
-# -------------------------
-@app.get("/env-check")
-def env_check():
-    return {
-        "api_key_exists": bool(os.getenv("API_KEY")),
-        "api_secret_exists": bool(os.getenv("API_SECRET"))
-    }
-
-# -------------------------
-# SIGNAL ENGINE (REAL STRUCTURE, STILL SIMPLIFIED)
-# -------------------------
+# ---------------- SIGNALS ----------------
 @app.get("/signals")
 def signals():
 
@@ -55,52 +26,35 @@ def signals():
         ("RELIANCE", "Energy")
     ]
 
-    result = []
+    results = []
 
     for stock, sector in stocks:
 
-        buy = round(random.uniform(100, 3000), 2)
-        target = round(buy * random.uniform(1.01, 1.05), 2)
-        sl = round(buy * 0.97, 2)
+        price = get_ltp(stock)
 
-        result.append({
+        # ❗ If even cache is empty, skip
+        if price is None:
+            continue
+
+        results.append({
             "stock": stock,
             "sector": sector,
-            "buy_price": buy,
-            "target": target,
-            "stop_loss": sl,
-            "confidence": random.randint(60, 90),
-            "expected_days": random.randint(1, 5),
-            "reason": f"{sector} momentum + volume breakout",
-            "time": str(datetime.now())
+            "buy_price": price,
+            "target": round(price * 1.02, 2),
+            "stop_loss": round(price * 0.98, 2),
+            "market_status": "LIVE" if is_market_open() else "CLOSED (CACHED)",
         })
 
-    return result
+    return results
 
-# -------------------------
-# STOCK PREDICTION
-# -------------------------
-@app.get("/predict/{stock}")
-def predict(stock: str):
 
-    price = get_ltp(stock)
+@app.get("/price/{symbol}")
+def price(symbol: str):
+
+    price = get_ltp(symbol)
 
     return {
-        "stock": stock.upper(),
-        "live_price": price,
-        "prediction": "Short term momentum expected",
-        "confidence": random.randint(60, 90)
+        "symbol": symbol,
+        "price": price,
+        "market_open": is_market_open()
     }
-
-# -------------------------
-# ZERODHA CALLBACK
-# -------------------------
-@app.get("/callback")
-def callback(request: Request):
-
-    request_token = request.query_params.get("request_token")
-
-    if not request_token:
-        return {"status": "ERROR", "message": "Missing request_token"}
-
-    return generate_token(request_token)
