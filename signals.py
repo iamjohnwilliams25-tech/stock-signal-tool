@@ -20,24 +20,21 @@ def generate_signals():
 
         price = get_ltp(stock)
 
-        # ❗ HARD FIX: if price fails, DO NOT generate fake data
-        if price is None:
+        # ❗ STRICT RULE: NO PRICE = SKIP
+        if price is None or price <= 0:
             continue
 
-        buy_price = float(price)
-
-        target = round(buy_price * 1.02, 2)
-        stop_loss = round(buy_price * 0.98, 2)
+        price = float(price)
 
         results.append({
             "stock": stock,
             "sector": sector,
-            "buy_price": buy_price,
-            "target": target,
-            "stop_loss": stop_loss,
-            "confidence": random.randint(70, 90),
+            "buy_price": round(price, 2),
+            "target": round(price * 1.02, 2),
+            "stop_loss": round(price * 0.98, 2),
+            "confidence": random.randint(70, 95),
             "expected_days": random.randint(1, 3),
-            "reason": "Live price breakout logic"
+            "reason": "Live Zerodha market feed"
         })
 
     return results
