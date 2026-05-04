@@ -2,27 +2,29 @@ from fastapi import FastAPI, Request
 from signals import generate_signals
 from zerodha_api import generate_token, get_ltp
 import random
-import os
 
 app = FastAPI()
 
-# -------------------
-# HOME
-# -------------------
+# -----------------------------
+# HOME ROUTE (health check)
+# -----------------------------
 @app.get("/")
 def home():
-    return {"status": "API Working with Zerodha Setup Ready"}
+    return {
+        "status": "API Running",
+        "message": "Stock Signal System Active"
+    }
 
-# -------------------
-# SIGNALS
-# -------------------
+# -----------------------------
+# ALL SIGNALS (mock engine)
+# -----------------------------
 @app.get("/signals")
 def signals():
     return generate_signals()
 
-# -------------------
-# SEARCH
-# -------------------
+# -----------------------------
+# SINGLE STOCK ANALYSIS
+# -----------------------------
 @app.get("/predict/{stock}")
 def predict(stock: str):
 
@@ -32,25 +34,42 @@ def predict(stock: str):
         return {
             "stock": stock.upper(),
             "live_price": price,
-            "prediction": "Bullish momentum",
+            "prediction": "Short-term bullish momentum",
             "expected_move": "1% to 5%",
-            "confidence": random.randint(60, 88)
+            "confidence": random.randint(60, 90),
+            "reason": "Live volume + sector strength"
         }
 
     return {
         "stock": stock.upper(),
-        "error": "Price not available yet"
+        "live_price": None,
+        "message": "Live price not available (token may not be set)"
     }
 
-# -------------------
-# CALLBACK (ZERODHA LOGIN)
-# -------------------
+# -----------------------------
+# ZERODHA CALLBACK (IMPORTANT)
+# -----------------------------
 @app.get("/callback")
 def callback(request: Request):
 
     request_token = request.query_params.get("request_token")
 
     if not request_token:
-        return {"error": "Missing request_token"}
+        return {
+            "status": "ERROR",
+            "message": "Missing request_token"
+        }
 
-    return generate_token(request_token)
+    try:
+        result = generate_token(request_token)
+
+        return {
+            "status": "CALLBACK_SUCCESS",
+            "data": result
+        }
+
+    except Exception as e:
+        return {
+            "status": "ERROR",
+            "message": str(e)
+        }
