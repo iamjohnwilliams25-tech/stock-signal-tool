@@ -1,46 +1,26 @@
 import os
+import datetime
 from kiteconnect import KiteConnect
 
 kite = None
 ACCESS_TOKEN = None
 
+# ---------------- CACHE STORAGE ----------------
+LAST_KNOWN_PRICES = {}
 
-# -----------------------------
-# INIT CLIENT
-# -----------------------------
+
+# ---------------- INIT ----------------
 def init_kite():
     global kite
 
     if kite is None:
         api_key = os.getenv("API_KEY")
-
-        if not api_key:
-            raise Exception("API_KEY missing")
-
         kite = KiteConnect(api_key=api_key)
 
     return kite
 
 
-# -----------------------------
-# STORE SESSION (CRITICAL FIX)
-# -----------------------------
-def set_session(token):
-    global ACCESS_TOKEN, kite
-
-    ACCESS_TOKEN = token
-
-    kite = init_kite()
-    kite.set_access_token(token)
-
-
-def get_session():
-    return ACCESS_TOKEN
-
-
-# -----------------------------
-# LOGIN CALLBACK
-# -----------------------------
+# ---------------- SESSION ----------------
 def generate_token(request_token):
 
     kite = init_kite()
@@ -51,36 +31,52 @@ def generate_token(request_token):
         api_secret=api_secret
     )
 
-    token = data["access_token"]
+    global ACCESS_TOKEN
+    ACCESS_TOKEN = data["access_token"]
 
-    set_session(token)
+    kite.set_access_token(ACCESS_TOKEN)
 
     return {
         "status": "SUCCESS",
-        "access_token": token
+        "access_token": ACCESS_TOKEN
     }
 
 
-# -----------------------------
-# LIVE PRICE (STRICT FIX)
-# -----------------------------
+# ---------------- MARKET STATUS ----------------
+def is_market_open():
+
+    now = datetime.datetime.now().time()
+
+    start = datetime.time(9, 15)
+    end = datetime.time(15, 30)
+
+    return start <= now <= end
+
+
+# ---------------- LIVE PRICE + CACHE ----------------
 def get_ltp(symbol):
+
+    global LAST_KNOWN_PRICES
 
     try:
         if not ACCESS_TOKEN:
-            return None
+            return LAST_KNOWN_PRICES.get(symbol)
 
+        kite = init_kite()
         kite.set_access_token(ACCESS_TOKEN)
 
         data = kite.ltp(f"NSE:{symbol}")
-
         key = f"NSE:{symbol}"
 
-        if key not in data:
-            return None
+        price = float(data[key]["last_price"])
 
-        return float(data[key]["last_price"])
+        # SAVE TO CACHE
+        LAST_KNOWN_PRICES[symbol] = price
+
+        return price
 
     except Exception as e:
         print("LTP ERROR:", e)
-        return None
+
+        # fallback → return cached value
+        return LAST_KNOWN_PRICES.get(symbol)
