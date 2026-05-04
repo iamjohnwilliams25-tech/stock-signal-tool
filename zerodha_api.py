@@ -1,16 +1,15 @@
 import os
 from kiteconnect import KiteConnect
 
-# ---------------- KITE CLIENT ----------------
+
+# ---------------- INIT ----------------
 def get_kite():
     return KiteConnect(api_key=os.getenv("API_KEY"))
 
 
-# ---------------- SAVE TOKEN TO RAILWAY ENV ----------------
-def save_token_env(token):
-    # NOTE: Railway env cannot be updated dynamically via code
-    # so we return token to store manually once OR via deploy panel
-    return token
+# ---------------- TOKEN FROM RAILWAY ENV ----------------
+def get_token():
+    return os.getenv("ACCESS_TOKEN")
 
 
 # ---------------- LOGIN CALLBACK ----------------
@@ -29,21 +28,8 @@ def generate_token(request_token):
     return {
         "status": "SUCCESS",
         "access_token": token,
-        "message": "COPY THIS TOKEN → ADD IN RAILWAY ENV VARIABLE: ACCESS_TOKEN"
+        "message": "COPY THIS → /set-token/{token}"
     }
-
-
-# ---------------- GET TOKEN ----------------
-def get_token():
-    return os.getenv("ACCESS_TOKEN")
-
-
-# ---------------- MARKET STATUS ----------------
-def is_market_open():
-    from datetime import datetime, time
-
-    now = datetime.now().time()
-    return time(9, 15) <= now <= time(15, 30)
 
 
 # ---------------- LIVE PRICE ----------------
@@ -59,9 +45,8 @@ def get_ltp(symbol):
         kite.set_access_token(token)
 
         data = kite.ltp(f"NSE:{symbol}")
-        key = f"NSE:{symbol}"
 
-        return float(data[key]["last_price"])
+        return float(data[f"NSE:{symbol}"]["last_price"])
 
     except Exception as e:
         print("LTP ERROR:", e)
