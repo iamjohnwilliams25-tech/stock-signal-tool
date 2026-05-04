@@ -1,15 +1,33 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from signals import generate_signals
 from zerodha_api import generate_token, get_ltp
-import random
 import os
+import random
 
 app = FastAPI()
 
+# -------------------------
+# FIX CORS (CRITICAL FOR WORDPRESS)
+# -------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# -------------------------
+# HOME
+# -------------------------
 @app.get("/")
 def home():
     return {"status": "API Running", "mode": "LIVE READY"}
 
+# -------------------------
+# ENV CHECK
+# -------------------------
 @app.get("/env-check")
 def env_check():
     return {
@@ -17,30 +35,31 @@ def env_check():
         "api_secret_exists": bool(os.getenv("API_SECRET"))
     }
 
+# -------------------------
+# SIGNALS
+# -------------------------
 @app.get("/signals")
 def signals():
     return generate_signals()
 
+# -------------------------
+# PREDICT
+# -------------------------
 @app.get("/predict/{stock}")
 def predict(stock: str):
 
     price = get_ltp(stock)
 
-    if price:
-        return {
-            "stock": stock.upper(),
-            "live_price": price,
-            "prediction": "Market momentum detected",
-            "expected_move": "1% - 5%",
-            "confidence": random.randint(65, 92)
-        }
-
     return {
         "stock": stock.upper(),
-        "live_price": None,
-        "message": "Token not active or market data not available yet"
+        "live_price": price,
+        "prediction": "Momentum move expected",
+        "confidence": random.randint(60, 90)
     }
 
+# -------------------------
+# CALLBACK
+# -------------------------
 @app.get("/callback")
 def callback(request: Request):
 
