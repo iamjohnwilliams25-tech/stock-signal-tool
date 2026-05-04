@@ -4,6 +4,7 @@ from kiteconnect import KiteConnect
 kite = None
 ACCESS_TOKEN = None
 
+
 def init_kite():
     global kite
 
@@ -11,7 +12,7 @@ def init_kite():
         api_key = os.getenv("API_KEY")
 
         if not api_key:
-            raise Exception("API_KEY missing in environment")
+            return None
 
         kite = KiteConnect(api_key=api_key)
 
@@ -21,25 +22,35 @@ def init_kite():
 def generate_token(request_token: str):
     global ACCESS_TOKEN
 
-    kite = init_kite()
+    try:
+        kite = init_kite()
 
-    api_secret = os.getenv("API_SECRET")
+        if kite is None:
+            return {"status": "ERROR", "message": "API_KEY missing in environment"}
 
-    if not api_secret:
-        return {"error": "API_SECRET missing"}
+        api_secret = os.getenv("API_SECRET")
 
-    data = kite.generate_session(
-        request_token,
-        api_secret=api_secret
-    )
+        if not api_secret:
+            return {"status": "ERROR", "message": "API_SECRET missing in environment"}
 
-    ACCESS_TOKEN = data["access_token"]
-    kite.set_access_token(ACCESS_TOKEN)
+        data = kite.generate_session(
+            request_token,
+            api_secret=api_secret
+        )
 
-    return {
-        "status": "SUCCESS",
-        "access_token": ACCESS_TOKEN
-    }
+        ACCESS_TOKEN = data["access_token"]
+        kite.set_access_token(ACCESS_TOKEN)
+
+        return {
+            "status": "SUCCESS",
+            "access_token": ACCESS_TOKEN
+        }
+
+    except Exception as e:
+        return {
+            "status": "ERROR",
+            "message": str(e)
+        }
 
 
 def get_ltp(symbol: str):
@@ -49,8 +60,11 @@ def get_ltp(symbol: str):
 
         kite = init_kite()
 
+        if not kite:
+            return None
+
         data = kite.ltp(f"NSE:{symbol}")
         return data[f"NSE:{symbol}"]["last_price"]
 
-    except Exception:
+    except:
         return None
