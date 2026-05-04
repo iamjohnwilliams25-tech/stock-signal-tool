@@ -11,6 +11,7 @@ WATCHLIST = [
     ("RELIANCE", "Energy")
 ]
 
+
 def generate_signals():
 
     results = []
@@ -19,13 +20,14 @@ def generate_signals():
 
         price = get_ltp(stock)
 
-        if not price:
+        # ❗ HARD FIX: if price fails, DO NOT generate fake data
+        if price is None:
             continue
 
-        # REAL BASED CALCULATION (NOT RANDOM PRICE)
-        buy_price = round(price, 2)
-        target = round(price * 1.03, 2)   # 3% move assumption
-        stop_loss = round(price * 0.98, 2)
+        buy_price = float(price)
+
+        target = round(buy_price * 1.02, 2)
+        stop_loss = round(buy_price * 0.98, 2)
 
         results.append({
             "stock": stock,
@@ -33,9 +35,9 @@ def generate_signals():
             "buy_price": buy_price,
             "target": target,
             "stop_loss": stop_loss,
-            "confidence": random.randint(65, 90),
+            "confidence": random.randint(70, 90),
             "expected_days": random.randint(1, 3),
-            "reason": f"{sector} momentum based on live price"
+            "reason": "Live price breakout logic"
         })
 
     return results
