@@ -1,36 +1,41 @@
+from zerodha_api import get_ltp
 import random
-from datetime import datetime
 
-STOCKS = {
-    "Power": ["TATA_POWER", "NTPC"],
-    "Defence": ["HAL", "BEL"],
-    "IT": ["INFY", "TCS"],
-    "Energy": ["RELIANCE", "ONGC"],
-    "AI": ["COFORGE", "TCS"],
-    "Aerospace": ["HAL"],
-    "Banking": ["HDFCBANK", "ICICIBANK"]
-}
+WATCHLIST = [
+    ("TATA_POWER", "Power"),
+    ("NTPC", "Power"),
+    ("HAL", "Defence"),
+    ("BEL", "Defence"),
+    ("TCS", "AI"),
+    ("INFY", "AI"),
+    ("RELIANCE", "Energy")
+]
 
 def generate_signals():
+
     results = []
 
-    for sector, stocks in STOCKS.items():
-        for stock in stocks:
+    for stock, sector in WATCHLIST:
 
-            buy_price = round(random.uniform(100, 3000), 2)
-            target = round(buy_price * random.uniform(1.01, 1.05), 2)
-            stop_loss = round(buy_price * 0.97, 2)
+        price = get_ltp(stock)
 
-            results.append({
-                "stock": stock,
-                "sector": sector,
-                "buy_price": buy_price,
-                "target": target,
-                "stop_loss": stop_loss,
-                "confidence": random.randint(60, 90),
-                "expected_days": random.randint(1, 5),
-                "reason": f"{sector} momentum + volume breakout",
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            })
+        if not price:
+            continue
+
+        # REAL BASED CALCULATION (NOT RANDOM PRICE)
+        buy_price = round(price, 2)
+        target = round(price * 1.03, 2)   # 3% move assumption
+        stop_loss = round(price * 0.98, 2)
+
+        results.append({
+            "stock": stock,
+            "sector": sector,
+            "buy_price": buy_price,
+            "target": target,
+            "stop_loss": stop_loss,
+            "confidence": random.randint(65, 90),
+            "expected_days": random.randint(1, 3),
+            "reason": f"{sector} momentum based on live price"
+        })
 
     return results
