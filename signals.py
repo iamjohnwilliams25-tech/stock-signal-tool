@@ -1,4 +1,4 @@
-from zerodha_api import get_ltp, is_market_open
+from zerodha_api import get_ltp
 
 @app.get("/signals")
 def signals():
@@ -19,25 +19,14 @@ def signals():
 
         price = get_ltp(stock)
 
-        # ❗ IMPORTANT: NEVER SKIP COMPLETELY
-        if price is None:
-            results.append({
-                "stock": stock,
-                "sector": sector,
-                "buy_price": "NO DATA",
-                "target": "NO DATA",
-                "stop_loss": "NO DATA",
-                "market_status": "NO DATA (CHECK ZERODHA)"
-            })
-            continue
-
+        # ❗ STILL SHOW ROW EVEN IF NULL
         results.append({
             "stock": stock,
             "sector": sector,
-            "buy_price": price,
-            "target": round(price * 1.02, 2),
-            "stop_loss": round(price * 0.98, 2),
-            "market_status": "LIVE" if is_market_open() else "CLOSED (CACHED)"
+            "buy_price": price if price else "NO DATA",
+            "target": (round(price * 1.02, 2) if price else "NO DATA"),
+            "stop_loss": (round(price * 0.98, 2) if price else "NO DATA"),
+            "market_status": "LIVE" if price else "NO DATA FROM ZERODHA"
         })
 
     return results
