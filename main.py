@@ -5,8 +5,8 @@ app = FastAPI()
 
 @app.get("/")
 def home():
-    return {"status": "API Running Successfully"}
-
+    return {"status": "API Working"}
+    
 @app.get("/signals")
 def signals():
     return generate_signals()
