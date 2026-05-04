@@ -6,7 +6,9 @@ STOCKS = {
     "Defence": ["HAL", "BEL"],
     "IT": ["INFY", "TCS"],
     "Energy": ["RELIANCE", "ONGC"],
-    "AI": ["COFORGE", "TCS"]
+    "AI": ["COFORGE", "TCS"],
+    "Banking": ["HDFCBANK", "ICICIBANK"],
+    "Aerospace": ["HAL"]
 }
 
 def generate_signals():
@@ -15,16 +17,16 @@ def generate_signals():
     for sector, stocks in STOCKS.items():
         for stock in stocks:
 
-            buy = round(random.uniform(100, 3000), 2)
-            target = round(buy * random.uniform(1.01, 1.05), 2)
-            stop_loss = round(buy * 0.97, 2)
+            buy_price = round(random.uniform(100, 3000), 2)
+            target = round(buy_price * random.uniform(1.01, 1.05), 2)
+            stop_loss = round(buy_price * 0.97, 2)
 
             confidence = random.randint(60, 90)
 
             results.append({
                 "stock": stock,
                 "sector": sector,
-                "buy_price": buy,
+                "buy_price": buy_price,
                 "target": target,
                 "stop_loss": stop_loss,
                 "confidence": confidence,
