@@ -6,7 +6,9 @@ STOCKS = {
     "Defence": ["HAL", "BEL"],
     "IT": ["INFY", "TCS"],
     "Energy": ["RELIANCE", "ONGC"],
-    "AI": ["COFORGE", "TCS"]
+    "AI": ["COFORGE", "TCS"],
+    "Aerospace": ["HAL"],
+    "Banking": ["HDFCBANK", "ICICIBANK"]
 }
 
 def generate_signals():
