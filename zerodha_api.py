@@ -1,82 +1,44 @@
 import os
-import datetime
 from kiteconnect import KiteConnect
 
-kite = None
-ACCESS_TOKEN = None
+# ---------------- ALWAYS FRESH CLIENT ----------------
+def get_kite():
 
-# ---------------- CACHE STORAGE ----------------
-LAST_KNOWN_PRICES = {}
-
-
-# ---------------- INIT ----------------
-def init_kite():
-    global kite
-
-    if kite is None:
-        api_key = os.getenv("API_KEY")
-        kite = KiteConnect(api_key=api_key)
+    api_key = os.getenv("API_KEY")
+    kite = KiteConnect(api_key=api_key)
 
     return kite
 
 
-# ---------------- SESSION ----------------
-def generate_token(request_token):
-
-    kite = init_kite()
-    api_secret = os.getenv("API_SECRET")
-
-    data = kite.generate_session(
-        request_token,
-        api_secret=api_secret
-    )
-
-    global ACCESS_TOKEN
-    ACCESS_TOKEN = data["access_token"]
-
-    kite.set_access_token(ACCESS_TOKEN)
-
-    return {
-        "status": "SUCCESS",
-        "access_token": ACCESS_TOKEN
-    }
-
-
-# ---------------- MARKET STATUS ----------------
-def is_market_open():
-
-    now = datetime.datetime.now().time()
-
-    start = datetime.time(9, 15)
-    end = datetime.time(15, 30)
-
-    return start <= now <= end
-
-
-# ---------------- LIVE PRICE + CACHE ----------------
+# ---------------- GET LIVE PRICE (NO STATE DEPENDENCY) ----------------
 def get_ltp(symbol):
 
-    global LAST_KNOWN_PRICES
-
     try:
-        if not ACCESS_TOKEN:
-            return LAST_KNOWN_PRICES.get(symbol)
+        kite = get_kite()
 
-        kite = init_kite()
-        kite.set_access_token(ACCESS_TOKEN)
+        access_token = os.getenv("ACCESS_TOKEN")
+
+        if not access_token:
+            return None
+
+        kite.set_access_token(access_token)
 
         data = kite.ltp(f"NSE:{symbol}")
+
         key = f"NSE:{symbol}"
 
-        price = float(data[key]["last_price"])
-
-        # SAVE TO CACHE
-        LAST_KNOWN_PRICES[symbol] = price
-
-        return price
+        return float(data[key]["last_price"])
 
     except Exception as e:
         print("LTP ERROR:", e)
+        return None
 
-        # fallback → return cached value
-        return LAST_KNOWN_PRICES.get(symbol)
+
+# ---------------- MARKET STATUS FIX ----------------
+def is_market_open():
+
+    from datetime import datetime, time
+
+    now = datetime.now().time()
+
+    return time(9, 15) <= now <= time(15, 30)
