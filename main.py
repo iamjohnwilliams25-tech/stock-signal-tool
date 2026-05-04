@@ -1,9 +1,8 @@
 from fastapi import FastAPI, Request
-import os
-import random
-
 from signals import generate_signals
 from zerodha_api import generate_token, get_ltp
+import random
+import os
 
 app = FastAPI()
 
@@ -18,7 +17,7 @@ def home():
     }
 
 # -------------------------
-# ENV CHECK (IMPORTANT DEBUG)
+# DEBUG ENV CHECK
 # -------------------------
 @app.get("/env-check")
 def env_check():
@@ -35,7 +34,7 @@ def signals():
     return generate_signals()
 
 # -------------------------
-# SEARCH / PREDICT
+# STOCK PREDICTION
 # -------------------------
 @app.get("/predict/{stock}")
 def predict(stock: str):
@@ -45,7 +44,7 @@ def predict(stock: str):
     return {
         "stock": stock.upper(),
         "live_price": price,
-        "prediction": "Short-term momentum",
+        "prediction": "Momentum based move",
         "expected_move": "1% - 5%",
         "confidence": random.randint(60, 90)
     }
@@ -61,6 +60,4 @@ def callback(request: Request):
     if not request_token:
         return {"status": "ERROR", "message": "Missing request_token"}
 
-    result = generate_token(request_token)
-
-    return result
+    return generate_token(request_token)
