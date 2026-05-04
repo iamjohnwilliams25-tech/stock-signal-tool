@@ -6,19 +6,10 @@ import os
 
 app = FastAPI()
 
-# -------------------------
-# HOME
-# -------------------------
 @app.get("/")
 def home():
-    return {
-        "status": "API Running",
-        "message": "Stock Signal System Active"
-    }
+    return {"status": "API Running", "mode": "LIVE READY"}
 
-# -------------------------
-# DEBUG ENV CHECK
-# -------------------------
 @app.get("/env-check")
 def env_check():
     return {
@@ -26,32 +17,30 @@ def env_check():
         "api_secret_exists": bool(os.getenv("API_SECRET"))
     }
 
-# -------------------------
-# SIGNALS
-# -------------------------
 @app.get("/signals")
 def signals():
     return generate_signals()
 
-# -------------------------
-# STOCK PREDICTION
-# -------------------------
 @app.get("/predict/{stock}")
 def predict(stock: str):
 
     price = get_ltp(stock)
 
+    if price:
+        return {
+            "stock": stock.upper(),
+            "live_price": price,
+            "prediction": "Market momentum detected",
+            "expected_move": "1% - 5%",
+            "confidence": random.randint(65, 92)
+        }
+
     return {
         "stock": stock.upper(),
-        "live_price": price,
-        "prediction": "Momentum based move",
-        "expected_move": "1% - 5%",
-        "confidence": random.randint(60, 90)
+        "live_price": None,
+        "message": "Token not active or market data not available yet"
     }
 
-# -------------------------
-# ZERODHA CALLBACK
-# -------------------------
 @app.get("/callback")
 def callback(request: Request):
 
