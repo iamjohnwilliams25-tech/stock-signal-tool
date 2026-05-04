@@ -5,9 +5,6 @@ kite = None
 ACCESS_TOKEN = None
 
 
-# -----------------------------
-# INIT KITE CLIENT
-# -----------------------------
 def init_kite():
     global kite
 
@@ -22,9 +19,6 @@ def init_kite():
     return kite
 
 
-# -----------------------------
-# STORE TOKEN (SAFE MEMORY)
-# -----------------------------
 def set_token(token):
     global ACCESS_TOKEN
     ACCESS_TOKEN = token
@@ -34,21 +28,18 @@ def get_token():
     return ACCESS_TOKEN
 
 
-# -----------------------------
-# GENERATE TOKEN AFTER LOGIN
-# -----------------------------
+# -------------------------
+# STORE TOKEN PROPERLY
+# -------------------------
 def generate_token(request_token: str):
 
     try:
         kite = init_kite()
 
-        if kite is None:
-            return {"status": "ERROR", "message": "API_KEY missing in environment"}
+        if not kite:
+            return {"status": "ERROR", "message": "API_KEY missing"}
 
         api_secret = os.getenv("API_SECRET")
-
-        if not api_secret:
-            return {"status": "ERROR", "message": "API_SECRET missing in environment"}
 
         data = kite.generate_session(
             request_token,
@@ -57,8 +48,8 @@ def generate_token(request_token: str):
 
         global ACCESS_TOKEN
         ACCESS_TOKEN = data["access_token"]
-        kite.set_access_token(ACCESS_TOKEN)
 
+        kite.set_access_token(ACCESS_TOKEN)
         set_token(ACCESS_TOKEN)
 
         return {
@@ -73,9 +64,9 @@ def generate_token(request_token: str):
         }
 
 
-# -----------------------------
-# LIVE PRICE (SAFE)
-# -----------------------------
+# -------------------------
+# REAL LIVE PRICE FUNCTION
+# -------------------------
 def get_ltp(symbol: str):
 
     try:
@@ -90,5 +81,5 @@ def get_ltp(symbol: str):
         data = kite.ltp(f"NSE:{symbol}")
         return data[f"NSE:{symbol}"]["last_price"]
 
-    except:
+    except Exception as e:
         return None
