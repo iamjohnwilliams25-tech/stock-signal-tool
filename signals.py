@@ -1,5 +1,6 @@
-import random
 from datetime import datetime
+import random
+from zerodha_api import get_ltp
 
 STOCKS = {
     "Power": ["TATA_POWER", "NTPC"],
@@ -13,22 +14,27 @@ def generate_signals():
 
     for sector, stocks in STOCKS.items():
         for stock in stocks:
-            buy_price = round(random.uniform(100, 1500), 2)
-            target = round(buy_price * random.uniform(1.01, 1.05), 2)
-            stop_loss = round(buy_price * 0.97, 2)
 
-            confidence = random.randint(60, 85)
+            price = get_ltp(stock)
+
+            if price is None:
+                continue
+
+            target = round(price * 1.02, 2)
+            stop_loss = round(price * 0.98, 2)
+
+            confidence = random.randint(65, 85)
 
             results.append({
                 "stock": stock,
                 "sector": sector,
-                "buy_price": buy_price,
+                "buy_price": price,
                 "target": target,
                 "sell_price": round(target * 0.995, 2),
                 "support": stop_loss,
                 "confidence": confidence,
                 "expected_days": random.randint(1, 5),
-                "reason": "Momentum + volume spike",
+                "reason": "Live price + basic momentum",
                 "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             })
 
