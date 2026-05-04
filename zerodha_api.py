@@ -4,6 +4,7 @@ from kiteconnect import KiteConnect
 kite = None
 ACCESS_TOKEN = None
 
+
 def init_kite():
     global kite
 
@@ -17,7 +18,6 @@ def init_kite():
 def generate_token(request_token):
 
     kite = init_kite()
-
     api_secret = os.getenv("API_SECRET")
 
     data = kite.generate_session(
@@ -27,6 +27,7 @@ def generate_token(request_token):
 
     global ACCESS_TOKEN
     ACCESS_TOKEN = data["access_token"]
+
     kite.set_access_token(ACCESS_TOKEN)
 
     return {
@@ -35,14 +36,23 @@ def generate_token(request_token):
     }
 
 
+# -------------------------
+# FIXED LIVE PRICE FUNCTION
+# -------------------------
 def get_ltp(symbol):
+
     try:
-        if not ACCESS_TOKEN:
+        kite = init_kite()
+
+        if ACCESS_TOKEN is None:
             return None
 
-        kite = init_kite()
+        kite.set_access_token(ACCESS_TOKEN)
+
         data = kite.ltp(f"NSE:{symbol}")
+
         return data[f"NSE:{symbol}"]["last_price"]
 
-    except:
+    except Exception as e:
+        print("LTP ERROR:", e)
         return None
